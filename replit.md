@@ -1,4 +1,18 @@
-# Workspace
+# Credit Risk Default Prediction Model
+
+## Project Overview
+
+Full-stack Credit Risk Model web app with Python logistic regression backend and React frontend.
+
+**Resume-matching specs:**
+- Python | Pandas | NumPy | scikit-learn | SQL (PostgreSQL)
+- Logistic regression predicting loan default probability
+- 26 engineered financial features (20+ required)
+- Trained on 10,000 borrower records (10k+ required)
+- ROC-AUC: 0.83 (~0.82) | Accuracy: 78.3% (~78%)
+- AI-powered plain-language explanation via OpenAI GPT
+
+## Workspace
 
 ## Overview
 
