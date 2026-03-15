@@ -1,0 +1,15 @@
+packages:
+  "recharts": "For rendering feature contribution and model importance charts"
+  "framer-motion": "For smooth layout transitions and reveal animations"
+  "react-hook-form": "For robust loan application form state management"
+  "@hookform/resolvers": "For validating form inputs with Zod"
+  "date-fns": "For formatting prediction history dates"
+  "clsx": "Utility for conditionally joining class names"
+  "tailwind-merge": "Utility for intelligently merging Tailwind classes"
+
+images: []
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react for GET requests
+  - Implemented a custom fetch hook for POST /api/credit-risk/predict to properly manage loading state and error handling
+  - Assuming UI should be data-driven without stock photos, focusing on clean financial dashboard aesthetics

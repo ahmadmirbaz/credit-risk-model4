@@ -1,15 +1,18 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Credit Risk Model API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: credit-risk
+    description: Credit risk prediction operations
+  - name: openai
+    description: OpenAI AI chat operations
 paths:
   /healthz:
     get:
@@ -24,6 +27,166 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /credit-risk/predict:
+    post:
+      operationId: predictCreditRisk
+      tags: [credit-risk]
+      summary: Predict loan default probability
+      description: Runs logistic regression model on input features and returns a risk score with AI explanation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanApplication"
+      responses:
+        "200":
+          description: Credit risk prediction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditRiskResult"
+  /credit-risk/history:
+    get:
+      operationId: getCreditRiskHistory
+      tags: [credit-risk]
+      summary: Get prediction history
+      responses:
+        "200":
+          description: List of past predictions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditRiskRecord"
+  /credit-risk/model-info:
+    get:
+      operationId: getModelInfo
+      tags: [credit-risk]
+      summary: Get model information and feature importances
+      responses:
+        "200":
+          description: Model metadata and feature weights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelInfo"
+  /openai/conversations:
+    get:
+      operationId: listOpenaiConversations
+      tags: [openai]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenaiConversation"
+    post:
+      operationId: createOpenaiConversation
+      tags: [openai]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOpenaiConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiConversation"
+  /openai/conversations/{id}:
+    get:
+      operationId: getOpenaiConversation
+      tags: [openai]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiError"
+    delete:
+      operationId: deleteOpenaiConversation
+      tags: [openai]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiError"
+  /openai/conversations/{id}/messages:
+    get:
+      operationId: listOpenaiMessages
+      tags: [openai]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenaiMessage"
+    post:
+      operationId: sendOpenaiMessage
+      tags: [openai]
+      summary: Send a text message and receive a streaming text response
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendOpenaiMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant text chunks
+          content:
+            text/event-stream: {}
 components:
   schemas:
     HealthStatus:
@@ -33,4 +196,249 @@ components:
           type: string
       required:
         - status
-
+    LoanApplication:
+      type: object
+      properties:
+        applicantName:
+          type: string
+        age:
+          type: number
+          description: Age in years
+        income:
+          type: number
+          description: Annual income in USD
+        loanAmount:
+          type: number
+          description: Requested loan amount in USD
+        loanTerm:
+          type: number
+          description: Loan term in months
+        creditScore:
+          type: number
+          description: Credit score (300-850)
+        debtToIncomeRatio:
+          type: number
+          description: Existing debt to income ratio (0-1)
+        employmentYears:
+          type: number
+          description: Years at current employer
+        numCreditLines:
+          type: number
+          description: Number of open credit lines
+        numLatePayments:
+          type: number
+          description: Number of late payments in last 2 years
+        homeOwnership:
+          type: string
+          enum: [rent, own, mortgage]
+        loanPurpose:
+          type: string
+          enum: [debt_consolidation, home_improvement, major_purchase, medical, business, other]
+      required:
+        - applicantName
+        - age
+        - income
+        - loanAmount
+        - loanTerm
+        - creditScore
+        - debtToIncomeRatio
+        - employmentYears
+        - numCreditLines
+        - numLatePayments
+        - homeOwnership
+        - loanPurpose
+    CreditRiskResult:
+      type: object
+      properties:
+        defaultProbability:
+          type: number
+          description: Probability of default (0-1)
+        riskCategory:
+          type: string
+          enum: [low, medium, high]
+        riskScore:
+          type: number
+          description: Risk score (0-100, lower is better)
+        decision:
+          type: string
+          enum: [approved, review, declined]
+        aiExplanation:
+          type: string
+          description: AI-generated plain-language explanation
+        featureContributions:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureContribution"
+        id:
+          type: integer
+      required:
+        - defaultProbability
+        - riskCategory
+        - riskScore
+        - decision
+        - aiExplanation
+        - featureContributions
+        - id
+    FeatureContribution:
+      type: object
+      properties:
+        feature:
+          type: string
+        value:
+          type: number
+        contribution:
+          type: number
+          description: Positive means increases risk, negative means decreases risk
+        displayName:
+          type: string
+      required:
+        - feature
+        - value
+        - contribution
+        - displayName
+    CreditRiskRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        applicantName:
+          type: string
+        creditScore:
+          type: number
+        income:
+          type: number
+        loanAmount:
+          type: number
+        defaultProbability:
+          type: number
+        riskCategory:
+          type: string
+        decision:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - applicantName
+        - creditScore
+        - income
+        - loanAmount
+        - defaultProbability
+        - riskCategory
+        - decision
+        - createdAt
+    ModelInfo:
+      type: object
+      properties:
+        modelType:
+          type: string
+        accuracy:
+          type: number
+        auc:
+          type: number
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureInfo"
+        trainingSamples:
+          type: integer
+        lastTrained:
+          type: string
+      required:
+        - modelType
+        - accuracy
+        - auc
+        - features
+        - trainingSamples
+        - lastTrained
+    FeatureInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        importance:
+          type: number
+        description:
+          type: string
+      required:
+        - name
+        - displayName
+        - importance
+        - description
+    OpenaiConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+    OpenaiMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+    CreateOpenaiConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+    SendOpenaiMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    OpenaiConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/OpenaiMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+    OpenaiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
