@@ -45,7 +45,7 @@ Example `.env` configuration
 PORT=3000  
 DATABASE_URL=postgres://postgres@localhost:5432/riskedge  
 AI_INTEGRATIONS_OPENAI_BASE_URL=http://localhost:3001  
-AI_INTEGRATIONS_OPENAI_API_KEY=your_openai_api_key  
+AI_INTEGRATIONS_OPENAI_API_KEY= {your openai api key}
 
 Start PostgreSQL
 
